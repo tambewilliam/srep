@@ -1,0 +1,171 @@
+
+PAMSYN (PAttern Matching SYNtax).
+
+PAMSYN borrow its syntax from the unix shell with
+the use of the well known metacharacters '*' and '?';
+on top of which additional metacharacters
+are implemented to enhance it.
+
+Metacharacters:
+
+*		Match zero or more consecutive characters.
+
+
+?		Match any single character.
+
+
+<		Match the begining of the string on which
+		the pattern is applied.
+		ei: "<object" will match "object" only if it is
+		found at the beginning.
+
+
+>		Match the end of the string on which the pattern
+		is applied.
+		ei: "object>" will match "object" only if it is
+		found at the end.
+
+
+.		Match an empty space; this metacharacter is used
+		to perform an insertion, and is commonly used with
+		the metacharacter construct #{,} to match a location
+		where to do the insertion.
+		ei: "#{arg}.#{s}" will match the empty space in
+		"args" that is found between "arg" and "s".
+
+
+[]		Match any one of the enclosed characters.
+		A pair of characters seperated by a hyphen denote
+		a range; any character that is between the range of
+		those two characters included, is matched. It is done
+		according to the ASCII table.
+		ei: "[ab-dz]" will match any of the single characters
+		'a', 'b' through 'd' and 'z'.
+		It is also possible to use escape characters within
+		'[' and ']'.
+
+
+{,}		Match either expression within braces which are
+		separated by commas.
+		ei: "{plane,ball,note}" will match either "plane",
+		"ball" or "note".
+
+
+!{,}
+![]		Match expression just like with {,} or [] respectively,
+		only if a difference is found. The number of characters
+		is taken into account.
+		ei: "!{cargo}" will match only if the 5 characters string
+		is not "cargo".
+		"!{train,pen} will first match 5 characters against
+		"train"; if there is no string difference, 3 characters
+		are matched against "pen", and if there is a string
+		difference a match has been found otherwise there was
+		no match; note that the use of metacharacters '?', '*'
+		or any other metacharacters, keep their meaning. 
+		A common pitfall is to think that a pattern such as
+		"!{a,b}" mean not matching 'a' and 'b' which is wrong,
+		because "!{a,b}" is equivalent to "{!{a},!{b}}" which
+		mean not matching 'a' or not matching 'b'; to achieve
+		the meaning of not matching 'a' and 'b' one should
+		use the brackets metacharacters.
+		ei: "![ab] which will match only if the character
+		is not 'a' and 'b'.
+		The reason why a pattern such as "!{text1,t2,texting3}a"
+		cannot mean not matching "text1" and "t2" and "texting3"
+		is because the size is taken into consideration; let's
+		assume that none of those alternatives work, it is
+		impossible to determine how many characters to skip
+		before matching 'a' .
+
+
+#{,}
+#[]		Match expression just like with {,} or [] respectively,
+		but hide any match from the final result.
+		ei: "#{date: }01/22/#{1985}" will match the string
+		"date: 01/22/1985", but the final result will be "01/22/".
+
+
+_{,}
+_[]		Match expression just like with {,} or []
+		respectively, ignoring characters' case.
+
+
+%{,}
+%[]		Match expression within braces just like with {,} or [] respectively,
+		and compare the result of the match against another similar block
+		with the same id. The id is a non-null decimal integer value
+		that is specified between "%" and "{" or "["; ei: %2{pattern}.
+		The id can be ommitted; in which case the id is assumed
+		to be the maximum value of a uint.
+		Only the non-hidden portion of the match is compared; in
+		other words any match within a block #{,} is not compared.
+		ei: "%{[0-9][0-9]#{/22/1985}}::%{[0-9][0-9]#{/12/1970}}"
+		The above pattern will yield a match if the two digits month
+		are the same in both dates, and the day and year digits need
+		to be "/22/1985" and "/12/1970" in the first and second date
+		respectively; hence a string such as "12/22/1985::13/12/1970"
+		will fail the match but a string such as "10/22/1985::10/12/1970"
+		will succeed the match.
+
+
++{,}
++[]		Match expression within braces just like with {,} or [] respectively,
+		but repeat the match. The repetition count is specified
+		between '+' and '{' or '['.
+		More than one repetition count can be specified as well
+		as ranges of repetition count. ei: "+2{a}" will match "aa" .
+		When there is more than one repetition count or a range of
+		repetition count, each repetition count is tried until
+		a repetition count that yield a positive match is found.
+		"+2,4{a}" will match in order "aa" or "aaaa" and is similar
+			to "{aa,aaaa}" .
+		"+2-4,1{a}" will match in order "aa" or "aaa" or "aaaa" or "a"
+			and is similar to "{aa,aaa,aaaa,a}" .
+		"+4-2{a}" will match in order "aaaa" or "aaa" or "aa" and
+			is similar to "{aaaa,aaa,aa}" .
+		"+2{ab,aa}" is similar to "{ab,aa}{ab,aa}" .
+		Note that when using a range, the first number is the
+			starting count, while the second value is
+			the ending count.
+		
+		The character '*' can be used instead of a number to specify
+		an infinite count or a range with an infinite boundary.
+		ei: "+*-10{d}" will try a match that contain an infinite
+		count of the character 'd' down to a match that contain
+		a count of 10 characters 'd'.
+		
+		One could write a pattern such as "+*{a}" but it wouldn't
+		be usefull because such a pattern basically mean matching
+		a text containing (uint)-1 characters 'a';
+		
+		The pattern "+{ag}" is similar to "+1-*{ag}" which will
+		attempt to match at least one "ag" and keep repeating it
+		as much as possible in an attempt to find a match.
+		
+		A common pitfall is to use "b+{a}" on "baaac" and to think
+		that "baaa" will be matched; only 'b' and at least one 'a'
+		will be matched. To match "baaa" one should use one of
+		the following pattern: "b+*-1{a}", "b+{a}#{c}"; where in
+		the last pattern 'c' is matched simply to make sure that
+		all 'a' have been matched, but 'c' is not made part of
+		the final result.
+		
+		"+3{+0-9{a}}" is similar to "+0-9{a}+0-9{a}+0-9{a}" but
+		if applied to a text such as "a", the pattern "+3{+0-9{a}}" will
+		fail while the pattern "+0-9{a}+0-9{a}+0-9{a}" will succeed.
+		This is because a repetition number cannot be larger than
+		the space left to match, even if within the repetition brace
+		they could be a pattern which can match a space lesser than
+		the repetition size as it is the case for "+3{+0-9{a}}".
+
+To keep the pattern matching syntax clear,
+all metacharacters are required to be escaped
+when used as regular characters, otherwise
+the pattern is incorrect.
+
+Note about escaping:
+The only escaping sequences accepted are:
+'\\', '\n', '\t', '\x' where x is a metacharacter,
+'\xx' where xx is a two digits hexadecimal number
+that translate to a byte value.

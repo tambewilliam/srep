@@ -1,0 +1,106 @@
+
+SREP (Search and REPlace)
+
+Search and REPlace tool that is smaller
+and easier to use than grep/sed for
+file or stream processing.
+
+By default it will search in the same manner as fgrep;
+and when pattern matching is needed, it make use
+of PAMSYN (see pamsyn.README) which is an easier
+and more powerful alternive to RegExp.
+
+
+To build:
+make && make install
+
+
+Usage: srep [OPTIONS] pattern [FILES]
+
+	The pattern is searched on stdin if no files is given as argument.
+
+Options:
+
+ -a	Alternate behavior that show only the parts
+	of a line that matches; and when doing
+	substitution, the entire line containing
+	the match is substituted.
+
+ -b	Binary files are treated as text files.
+	When doing substitution, binary files
+	are skipped unless this option is used.
+
+ -c	Turn on coloring.
+
+ -e PAMSYN
+	Return the pamsyn with all metacharacters escaped.
+	The pamsyn is taken from stdin if no argument is given.
+
+ -h	Display this help.
+
+ -i	ignore characters' case.
+
+ -k	Do not skip symbolic links to file.
+
+ -l	Prefix each line of output with its line number
+	Ignored when doing substitution.
+
+ -n COUNT
+	Only output COUNT matches from each given file,
+	or only do COUNT substitutions.
+
+ -N COUNT_ABOVE_AND_BELOW
+ -N COUNT_ABOVE,COUNT_BELOW
+	Number of context lines to display
+	above and/or below the line
+	where a match was found.
+	Ignored when doing substitution
+	or when option -a is used.
+
+ -p	The given search pattern is a pamsyn.
+
+ -r 	Recursively process files in directories and subdirectories.
+
+ -R 	Recursively process files in directories and subdirectories,
+	following symbolic links.
+
+ -s SUBSTITUTE
+	Substitute the match with SUBSTITUTE in each file
+	given as argument. If the input is stdin or given
+	through the option -t, the output goes to stdout.
+	More than one option -s can be used when using a pamsyn;
+	for each portion of a match, there has to be a corresponding
+	option -s, otherwise nothing is substituted for that
+	particular portion of the match.
+	ei: Two option -s can be used to surround the word "this"
+	wherever it will be found, using the pamsyn ".#{this}." .
+	In the above example, there are two portions in the match:
+	before and after the word "this"; so for each portion
+	of the match, there has to be a corresponding option -s,
+	otherwise nothing is substituted for that particular
+	portion of the match.
+	If the option -a is used, more than one option -s
+	is useless; the additional option -s are ignored
+	and all portions of a match are substituted
+	using the same option -s.
+	When found in the option -s argument,
+	the following escape sequences are interpreted:
+	'\n': Newline.
+	'\t': Tab.
+	'\xx': Where xx is a two digits hexadecimal
+		number that translate to a byte value.
+	'\\': Escape the character '\' which
+		is used for escaping.
+
+ -t TEXT
+	The pattern is searched on TEXT instead
+	of stdin or files given as arguments.
+
+ -x PATH
+	Exclude paths ending with PATH.
+	More than one -x can be given.
+
+ -X PATHPAMSYN
+	Exclude paths for which the ending
+	match the pamsyn PATHPAMSYN.
+	More than one -X can be given.
